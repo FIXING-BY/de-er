@@ -1,138 +1,113 @@
-const API_KEY = "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";
-const API_URL = "https://api.groq.com/openai/v1/chat/completions";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
-const chatContainer = document.getElementById('chat-container');
-const userInput = document.getElementById('user-input');
-const sendBtn = document.getElementById('send-btn');
-const sidebar = document.getElementById('sidebar');
-const overlay = document.getElementById('sidebar-overlay');
-const historyList = document.getElementById('history-list');
-
-// Sidebar Kontrolleri
-document.getElementById('open-menu').onclick = () => { sidebar.classList.add('active'); overlay.classList.add('active'); };
-document.getElementById('close-menu').onclick = () => { sidebar.classList.remove('active'); overlay.classList.remove('active'); };
-overlay.onclick = () => { sidebar.classList.remove('active'); overlay.classList.remove('active'); };
-
-function setTheme(t) {
-    document.body.className = 'theme-' + t;
-    localStorage.setItem('deger_yz_theme', t);
+:root {
+    --accent: rgb(96,255,127);
+    --bg: #05070a;
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --text: #ffffff;
+    --text-mute: rgba(255, 255, 255, 0.5);
+    --msg-user: #1a1d23;
 }
 
-function addMessage(text, isBot = true, sources = []) {
-    const welcome = document.querySelector('.welcome-screen');
-    if (welcome) welcome.remove();
-
-    const div = document.createElement('div');
-    div.className = `msg ${isBot ? 'bot' : 'user'}`;
-    let html = `<div>${text}</div>`;
-    if (sources.length > 0) {
-        html += `<div class="bibliography"><b>Analiz Edilen Dosyalar:</b> ${sources.join(', ')}</div>`;
-    }
-    div.innerHTML = html;
-    chatContainer.appendChild(div);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
+body.theme-grey {
+    --bg: #f5f7fa;
+    --glass-bg: rgba(0, 0, 0, 0.03);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --text: #1a1a1a;
+    --text-mute: #666;
+    --accent: #2d3436;
 }
 
-// GROQ API (Llama 3.1) Çağrısı
-async function getAIResponse(question, contextData) {
-    const systemPrompt = `
-    Senin adın Değer YZ. Ozan Nigar ve Hasan Eymen Kartal tarafından geliştirildin.
-    
-    KURALLAR:
-    1. Sadece sana verilen "METİNLER" üzerinden cevap ver. Dışarıdan bilgi ekleme.
-    2. Eğer metinlerde cevap yoksa tam olarak şunu söyle: "Bu bilgiye kütüphanemdeki değerlendirmelerden ulaşamadım, kitap veya film hakkında başka bir şey sorabilirsin."
-    3. Sadece kitap ve film konuş.
-    
-    METİNLER:
-    ${contextData.map(d => `[Dosya: ${d.author}]: ${d.content}`).join("\n\n")}`;
-
-    try {
-        const res = await fetch(API_URL, {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: "llama-3.1-8b-instant",
-                messages: [{ role: "system", content: systemPrompt }, { role: "user", content: question }],
-                temperature: 0.0
-            })
-        });
-        const data = await res.json();
-        return data.choices[0].message.content;
-    } catch (e) { return "Analiz yapılamadı, API bağlantısı kurulamıyor."; }
+body.theme-soft-dark {
+    --bg: #000;
+    --glass-bg: rgba(255, 255, 255, 0.02);
+    --accent: rgb(96,255,127);
 }
 
-async function handleSearch(query) {
-    const lowQ = query.toLocaleLowerCase('tr-TR');
-    
-    // Kimlik kontrolü
-    if (lowQ.includes("kimsin") || lowQ.includes("adın ne")) return addMessage("Ben <b>Değer YZ</b>. Kitap ve filmleri Ozan Nigar ve Hasan Eymen Kartal'ın sistemindeki verilerle analiz ederim.");
-    if (lowQ.includes("kim yaptı") || lowQ.includes("yapımcın")) return addMessage("Ben <b>Ozan Nigar</b> ve <b>Hasan Eymen Kartal</b> tarafından geliştirildim.");
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-    try {
-        const res = await fetch('index.json');
-        const data = await res.json();
-        
-        const book = data.kütüphane.find(k => lowQ.includes(k.ad.toLocaleLowerCase('tr-TR')));
-        if (!book) return addMessage("Bu eser kütüphanemde kayıtlı değil.");
-
-        let sortedAuthors = [
-            ...book.yazarlar.filter(a => a.toLocaleLowerCase('tr-TR').includes("(ö)")),
-            ...book.yazarlar.filter(a => !a.toLocaleLowerCase('tr-TR').includes("(ö)"))
-        ];
-
-        let fetchedDocs = [];
-        let successAuthors = [];
-
-        for (const author of sortedAuthors) {
-            try {
-                const folder = book.ad.toLocaleLowerCase('tr-TR');
-                const file = author.toLocaleLowerCase('tr-TR');
-                const url = `değerlendirmeler/${folder}/${file}.txt`;
-                
-                const fRes = await fetch(encodeURI(url));
-                if (fRes.ok) {
-                    fetchedDocs.push({ author: author, content: await fRes.text() });
-                    successAuthors.push(author);
-                }
-            } catch (e) {}
-        }
-
-        if (successAuthors.length > 0) {
-            addMessage("<i>Veriler analiz ediliyor...</i>");
-            const aiRes = await getAIResponse(query, fetchedDocs);
-            addMessage(aiRes, true, successAuthors);
-            saveHistory(query);
-        } else {
-            addMessage("Klasörde okunacak bir değerlendirme dosyası bulunamadı.");
-        }
-    } catch (e) { addMessage("Sistem hatası."); }
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
 }
 
-function saveHistory(q) {
-    let hist = JSON.parse(localStorage.getItem('deger_history')) || [];
-    if (!hist.includes(q)) {
-        hist.unshift(q);
-        if (hist.length > 15) hist.pop();
-        localStorage.setItem('deger_history', JSON.stringify(hist));
-        renderHistory();
-    }
+.glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(25px) saturate(180%);
+    border: 1px solid var(--glass-border);
 }
 
-function renderHistory() {
-    let hist = JSON.parse(localStorage.getItem('deger_history')) || [];
-    historyList.innerHTML = hist.map(q => `<div class="hist-item" onclick="useHistory('${q}')">${q.substring(0, 30)}...</div>`).join('');
+/* Yan Menü Apple Tarzı */
+#sidebar {
+    position: fixed; left: -320px; top: 15px; bottom: 15px; width: 300px;
+    border-radius: 24px; z-index: 1000; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 30px; display: flex; flex-direction: column;
+}
+#sidebar.active { left: 15px; box-shadow: 0 40px 100px rgba(0,0,0,0.8); }
+
+#sidebar-blur {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+    z-index: 999; backdrop-filter: blur(5px);
+}
+#sidebar-blur.active { display: block; }
+
+.sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+.brand-name { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; color: var(--accent); }
+#close-menu { background: none; border: none; color: var(--text); font-size: 1.2rem; cursor: pointer; }
+
+.menu-item label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-mute); margin-bottom: 12px; display: block; }
+.theme-btns { display: grid; gap: 8px; margin-bottom: 30px; }
+.t-btn { padding: 12px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.02); color: var(--text); cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+.t-btn:hover { background: var(--accent); color: #000; }
+
+/* Main Area */
+.main-screen { flex: 1; display: flex; flex-direction: column; position: relative; width: 100%; }
+
+.banner {
+    margin: 15px; height: 70px; border-radius: 20px; display: flex; align-items: center; 
+    justify-content: space-between; padding: 0 25px; z-index: 10;
 }
 
-function useHistory(q) {
-    userInput.value = q;
-    sidebar.classList.remove('active');
-    overlay.classList.remove('active');
-}
+.banner-left { display: flex; align-items: center; gap: 20px; }
+.menu-icon { background: none; border: none; cursor: pointer; display: flex; flex-direction: column; gap: 6px; }
+.menu-icon span { width: 24px; height: 2px; background: var(--text); border-radius: 10px; }
 
-sendBtn.onclick = () => {
-    const val = userInput.value.trim();
-    if (val) { addMessage(val, false); handleSearch(val); userInput.value = ''; }
-};
+.app-logo { width: 34px; height: 34px; color: var(--accent); }
+.brand-title { font-size: 1.2rem; font-weight: 800; }
 
-userInput.onkeypress = (e) => { if (e.key === 'Enter') sendBtn.click(); };
-window.onload = () => { setTheme(localStorage.getItem('deger_yz_theme') || 'standard'); renderHistory(); };
+.ai-status { font-size: 0.75rem; color: var(--accent); background: rgba(96,255,127,0.1); padding: 6px 16px; border-radius: 100px; font-weight: 600; }
+
+/* Chat Flow */
+#chat-flow { flex: 1; overflow-y: auto; padding: 40px 20px; display: flex; flex-direction: column; gap: 25px; }
+.intro-box { max-width: 600px; margin: 100px auto; text-align: center; }
+.intro-box h2 { font-size: 3rem; margin-bottom: 15px; font-weight: 800; letter-spacing: -2px; }
+.intro-box p { color: var(--text-mute); font-size: 1.1rem; line-height: 1.6; }
+
+.message { max-width: 800px; width: fit-content; padding: 20px 26px; border-radius: 28px; line-height: 1.6; font-size: 1.05rem; animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.msg-bot { align-self: flex-start; background: var(--glass-bg); border: 1px solid var(--glass-border); border-bottom-left-radius: 4px; }
+.msg-user { align-self: flex-end; background: var(--msg-user); border-bottom-right-radius: 4px; }
+
+.sources { margin-top: 15px; font-size: 0.8rem; color: var(--accent); padding-top: 12px; border-top: 1px solid var(--glass-border); font-weight: 500; }
+
+/* Yüzen Input Pill */
+.input-float-wrap { padding: 40px 20px; width: 100%; max-width: 850px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
+.input-pill { width: 100%; display: flex; align-items: center; padding: 8px 12px; border-radius: 24px; transition: 0.3s; }
+.input-pill:focus-within { border-color: var(--accent); box-shadow: 0 0 30px rgba(96,255,127,0.1); }
+
+#query-input { flex: 1; background: none; border: none; outline: none; color: var(--text); padding: 12px 15px; font-size: 1.1rem; }
+#send-trigger { background: var(--accent); border: none; width: 48px; height: 48px; border-radius: 18px; color: #000; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+#send-trigger:hover { transform: scale(1.05) rotate(-10deg); }
+#send-trigger svg { width: 22px; height: 22px; }
+
+.helper-text { font-size: 0.75rem; color: var(--text-mute); margin-top: 15px; }
+
+@keyframes pop { from { opacity: 0; transform: scale(0.9) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+/* Scrollbar Customization */
+#chat-flow::-webkit-scrollbar { width: 5px; }
+#chat-flow::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
