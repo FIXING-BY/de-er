@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Değer YZ - Kitap & Film Analiz</title>
+    <!-- Sekme Logosu (Yeşil Arkaplansız) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3272 3272'><path fill='black' d='M 773.691 986.084 L 772.791 984.088 C 779.634 972.417 796.011 956.836 806.008 947.569 C 861.783 895.829 929.313 858.443 1002.77 838.638 C 1074.68 819.933 1144.35 823.815 1218.03 823.825 L 1402.14 823.874 L 1977.83 823.872 L 2347.07 823.847 C 2401.86 823.84 2497.65 821.095 2549.07 826.395 C 2613.82 833.172 2676.36 853.779 2732.46 886.821 C 2837.68 948.965 2915.22 1049.25 2946.05 1167.94 C 2966.11 1245.19 2960.88 1348.31 2960.89 1429.58 L 2960.89 1708.09 L 2960.87 2095.63 C 2960.88 2159.53 2963.02 2239.56 2960.37 2302.31 L 2848.84 2373.67 C 2834.45 2382.94 2802.26 2402.71 2790.83 2412.89 L 2790.82 1688.81 L 2790.88 1494 C 2790.89 1479.77 2791.72 1416.72 2789.61 1405.33 C 2789.52 1216.98 2657.22 1039.13 2480.7 979.242 C 2401.8 952.475 2354.26 954.321 2273.24 954.399 L 2118.17 954.432 L 1623.45 954.422 L 1149.04 954.415 L 1001.54 954.388 C 926.222 954.293 843.723 952.975 773.691 986.084 z'/></svg>">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-standard">
+
+    <!-- Sol Menü -->
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <h3>Menü</h3>
+            <button id="close-menu">&times;</button>
+        </div>
+        <div class="sidebar-content">
+            <div class="menu-section">
+                <h4>Temalar</h4>
+                <button onclick="setTheme('standard')" class="t-btn t-std">Standart (Yeşil)</button>
+                <button onclick="setTheme('grey')" class="t-btn t-gry">Gri</button>
+                <button onclick="setTheme('soft-dark')" class="t-btn t-drk">Soft Siyah</button>
+            </div>
+            <div class="menu-section">
+                <h4>Sohbet Geçmişi</h4>
+                <div id="history-list"></div>
+                <button id="clear-history">Geçmişi Sil</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <!-- Banner -->
+        <header class="banner">
+            <button id="open-menu" class="hamburger">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="logo-wrap">
+                <!-- Banner Logosu (Yeşil kısımsız path) -->
+                <svg width="40" height="40" viewBox="0 0 3272 3272">
+                    <path fill="currentColor" d="M 773.691 986.084 L 772.791 984.088 C 779.634 972.417 796.011 956.836 806.008 947.569 C 861.783 895.829 929.313 858.443 1002.77 838.638 C 1074.68 819.933 1144.35 823.815 1218.03 823.825 L 1402.14 823.874 L 1977.83 823.872 L 2347.07 823.847 C 2401.86 823.84 2497.65 821.095 2549.07 826.395 C 2613.82 833.172 2676.36 853.779 2732.46 886.821 C 2837.68 948.965 2915.22 1049.25 2946.05 1167.94 C 2966.11 1245.19 2960.88 1348.31 2960.89 1429.58 L 2960.89 1708.09 L 2960.87 2095.63 C 2960.88 2159.53 2963.02 2239.56 2960.37 2302.31 L 2848.84 2373.67 C 2834.45 2382.94 2802.26 2402.71 2790.83 2412.89 L 2790.82 1688.81 L 2790.88 1494 C 2790.89 1479.77 2791.72 1416.72 2789.61 1405.33 C 2789.52 1216.98 2657.22 1039.13 2480.7 979.242 C 2401.8 952.475 2354.26 954.321 2273.24 954.399 L 2118.17 954.432 L 1623.45 954.422 L 1149.04 954.415 L 1001.54 954.388 C 926.222 954.293 843.723 952.975 773.691 986.084 z"/>
+                </svg>
+                <h1>DEĞER YZ</h1>
+            </div>
+        </header>
+
+        <!-- Chat Alanı -->
+        <main id="chat-container">
+            <div class="msg bot">Merhaba! Ben <b>Değer YZ</b>. Ozan Nigar ve Hasan Eymen Kartal tarafından geliştirildim. Bir kitap veya film hakkında soru sorabilirsin.</div>
+        </main>
+
+        <!-- Input Bar -->
+        <div class="input-area">
+            <div class="input-box">
+                <input type="text" id="user-input" placeholder="Bir şeyler yaz..." autocomplete="off">
+                <button id="send-btn">Sor</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
