@@ -1,113 +1,138 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+const API_KEY = "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";
+const API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-:root {
-    --accent: rgb(96,255,127);
-    --bg: #05070a;
-    --glass-bg: rgba(255, 255, 255, 0.03);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --text: #ffffff;
-    --text-mute: rgba(255, 255, 255, 0.5);
-    --msg-user: #1a1d23;
+const chatFlow = document.getElementById('chat-flow');
+const queryInput = document.getElementById('query-input');
+const sendTrigger = document.getElementById('send-trigger');
+const sidebar = document.getElementById('sidebar');
+const sidebarBlur = document.getElementById('sidebar-blur');
+const historyBox = document.getElementById('history-box');
+
+// UI Kontrolleri
+document.getElementById('menu-toggle').onclick = () => { sidebar.classList.add('active'); sidebarBlur.classList.add('active'); };
+document.getElementById('close-menu').onclick = () => { sidebar.classList.remove('active'); sidebarBlur.classList.remove('active'); };
+sidebarBlur.onclick = () => { sidebar.classList.remove('active'); sidebarBlur.classList.remove('active'); };
+
+function setTheme(t) {
+    document.body.className = 'theme-' + t;
+    localStorage.setItem('yz_theme_pref', t);
 }
 
-body.theme-grey {
-    --bg: #f5f7fa;
-    --glass-bg: rgba(0, 0, 0, 0.03);
-    --glass-border: rgba(0, 0, 0, 0.08);
-    --text: #1a1a1a;
-    --text-mute: #666;
-    --accent: #2d3436;
+function appendMessage(text, isBot = true, sources = []) {
+    const intro = document.querySelector('.intro-box');
+    if (intro) intro.remove();
+
+    const d = document.createElement('div');
+    d.className = `message ${isBot ? 'msg-bot' : 'msg-user'}`;
+    let html = `<div>${text}</div>`;
+    if (sources.length > 0) {
+        html += `<div class="sources">Sentezlenen Dosyalar: ${sources.join(', ')}</div>`;
+    }
+    d.innerHTML = html;
+    chatFlow.appendChild(d);
+    chatFlow.scrollTop = chatFlow.scrollHeight;
 }
 
-body.theme-soft-dark {
-    --bg: #000;
-    --glass-bg: rgba(255, 255, 255, 0.02);
-    --accent: rgb(96,255,127);
+// GROQ API Entegrasyonu
+async function callAnalyst(question, dataSet) {
+    const systemInstruction = `
+    Senin adın Değer YZ. Yapımcıların: Ozan Nigar ve Hasan Eymen Kartal.
+    KESİN KURALLAR:
+    1. Sadece sana verilen "METİNLER" üzerinden cevap ver. Kendi bilgilerini asla kullanma.
+    2. Metinlerde cevap yoksa tam olarak şunu söyle: "Bu bilgiye kütüphanemdeki değerlendirmelerden ulaşamadım, kitap veya film hakkında başka bir şey sorabilirsin."
+    3. Sadece kitap/film analizi yap.
+    METİNLER:
+    ${dataSet.map(d => `[Yazar: ${d.author}]: ${d.content}`).join("\n\n")}
+    `;
+
+    try {
+        const r = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: "llama-3.1-8b-instant",
+                messages: [{ role: "system", content: systemInstruction }, { role: "user", content: question }],
+                temperature: 0.0
+            })
+        });
+        const d = await r.json();
+        return d.choices[0].message.content;
+    } catch (e) { return "Bağlantı hatası: Analiz yapılamadı."; }
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+async function processSearch(q) {
+    const lowQ = q.toLocaleLowerCase('tr-TR');
+    
+    // Kimlik sorguları
+    if (lowQ.includes("kimsin") || lowQ.includes("adın ne")) return appendMessage("Ben <b>Değer YZ</b>. Ozan Nigar ve Hasan Eymen Kartal'ın sistemindeki verileri analiz ederim.");
+    if (lowQ.includes("kim yaptı") || lowQ.includes("sahibin")) return appendMessage("Ben <b>Ozan Nigar</b> ve <b>Hasan Eymen Kartal</b> tarafından kodlandım.");
 
-body {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    height: 100vh;
-    display: flex;
-    overflow: hidden;
+    try {
+        const res = await fetch('index.json');
+        const data = await res.json();
+        
+        const book = data.kütüphane.find(k => lowQ.includes(k.ad.toLocaleLowerCase('tr-TR')));
+        if (!book) return appendMessage("Bu eser kütüphanemde kayıtlı değil veya henüz incelenmemiş.");
+
+        // Yazarları sırala (ö) öncelikli
+        let sortedList = [
+            ...book.yazarlar.filter(a => a.toLocaleLowerCase('tr-TR').includes("(ö)")),
+            ...book.yazarlar.filter(a => !a.toLocaleLowerCase('tr-TR').includes("(ö)"))
+        ];
+
+        let docs = [];
+        let authNames = [];
+
+        for (const auth of sortedList) {
+            try {
+                const folder = book.ad.toLocaleLowerCase('tr-TR');
+                const file = auth.toLocaleLowerCase('tr-TR');
+                const url = `değerlendirmeler/${folder}/${file}.txt`;
+                
+                const fRes = await fetch(encodeURI(url));
+                if (fRes.ok) {
+                    docs.push({ author: auth, content: await fRes.text() });
+                    authNames.push(auth);
+                }
+            } catch (e) {}
+        }
+
+        if (authNames.length > 0) {
+            appendMessage("<i>Analiz ediliyor...</i>");
+            const result = await callAnalyst(q, docs);
+            appendMessage(result, true, authNames);
+            saveToHistory(q);
+        } else {
+            appendMessage("Eser klasöründe hiç değerlendirme dosyası (.txt) bulunamadı.");
+        }
+    } catch (e) { appendMessage("Sistem hatası: index.json okunamadı."); }
 }
 
-.glass {
-    background: var(--glass-bg);
-    backdrop-filter: blur(25px) saturate(180%);
-    border: 1px solid var(--glass-border);
+function saveToHistory(q) {
+    let hist = JSON.parse(localStorage.getItem('yz_history')) || [];
+    if (!hist.includes(q)) {
+        hist.unshift(q);
+        if (hist.length > 10) hist.pop();
+        localStorage.setItem('yz_history', JSON.stringify(hist));
+        renderHistory();
+    }
 }
 
-/* Yan Menü Apple Tarzı */
-#sidebar {
-    position: fixed; left: -320px; top: 15px; bottom: 15px; width: 300px;
-    border-radius: 24px; z-index: 1000; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    padding: 30px; display: flex; flex-direction: column;
-}
-#sidebar.active { left: 15px; box-shadow: 0 40px 100px rgba(0,0,0,0.8); }
-
-#sidebar-blur {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3);
-    z-index: 999; backdrop-filter: blur(5px);
-}
-#sidebar-blur.active { display: block; }
-
-.sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-.brand-name { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; color: var(--accent); }
-#close-menu { background: none; border: none; color: var(--text); font-size: 1.2rem; cursor: pointer; }
-
-.menu-item label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-mute); margin-bottom: 12px; display: block; }
-.theme-btns { display: grid; gap: 8px; margin-bottom: 30px; }
-.t-btn { padding: 12px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.02); color: var(--text); cursor: pointer; font-weight: 600; font-size: 0.85rem; }
-.t-btn:hover { background: var(--accent); color: #000; }
-
-/* Main Area */
-.main-screen { flex: 1; display: flex; flex-direction: column; position: relative; width: 100%; }
-
-.banner {
-    margin: 15px; height: 70px; border-radius: 20px; display: flex; align-items: center; 
-    justify-content: space-between; padding: 0 25px; z-index: 10;
+function renderHistory() {
+    let hist = JSON.parse(localStorage.getItem('yz_history')) || [];
+    historyBox.innerHTML = hist.map(i => `<div class="hist-item" onclick="useHist('${i}')">${i.substring(0, 25)}...</div>`).join('');
 }
 
-.banner-left { display: flex; align-items: center; gap: 20px; }
-.menu-icon { background: none; border: none; cursor: pointer; display: flex; flex-direction: column; gap: 6px; }
-.menu-icon span { width: 24px; height: 2px; background: var(--text); border-radius: 10px; }
+function useHist(i) {
+    queryInput.value = i;
+    sidebar.classList.remove('active');
+    sidebarBlur.classList.remove('active');
+}
 
-.app-logo { width: 34px; height: 34px; color: var(--accent); }
-.brand-title { font-size: 1.2rem; font-weight: 800; }
+sendTrigger.onclick = () => {
+    const val = queryInput.value.trim();
+    if (val) { appendMessage(val, false); processSearch(val); queryInput.value = ''; }
+};
 
-.ai-status { font-size: 0.75rem; color: var(--accent); background: rgba(96,255,127,0.1); padding: 6px 16px; border-radius: 100px; font-weight: 600; }
-
-/* Chat Flow */
-#chat-flow { flex: 1; overflow-y: auto; padding: 40px 20px; display: flex; flex-direction: column; gap: 25px; }
-.intro-box { max-width: 600px; margin: 100px auto; text-align: center; }
-.intro-box h2 { font-size: 3rem; margin-bottom: 15px; font-weight: 800; letter-spacing: -2px; }
-.intro-box p { color: var(--text-mute); font-size: 1.1rem; line-height: 1.6; }
-
-.message { max-width: 800px; width: fit-content; padding: 20px 26px; border-radius: 28px; line-height: 1.6; font-size: 1.05rem; animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-.msg-bot { align-self: flex-start; background: var(--glass-bg); border: 1px solid var(--glass-border); border-bottom-left-radius: 4px; }
-.msg-user { align-self: flex-end; background: var(--msg-user); border-bottom-right-radius: 4px; }
-
-.sources { margin-top: 15px; font-size: 0.8rem; color: var(--accent); padding-top: 12px; border-top: 1px solid var(--glass-border); font-weight: 500; }
-
-/* Yüzen Input Pill */
-.input-float-wrap { padding: 40px 20px; width: 100%; max-width: 850px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
-.input-pill { width: 100%; display: flex; align-items: center; padding: 8px 12px; border-radius: 24px; transition: 0.3s; }
-.input-pill:focus-within { border-color: var(--accent); box-shadow: 0 0 30px rgba(96,255,127,0.1); }
-
-#query-input { flex: 1; background: none; border: none; outline: none; color: var(--text); padding: 12px 15px; font-size: 1.1rem; }
-#send-trigger { background: var(--accent); border: none; width: 48px; height: 48px; border-radius: 18px; color: #000; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-#send-trigger:hover { transform: scale(1.05) rotate(-10deg); }
-#send-trigger svg { width: 22px; height: 22px; }
-
-.helper-text { font-size: 0.75rem; color: var(--text-mute); margin-top: 15px; }
-
-@keyframes pop { from { opacity: 0; transform: scale(0.9) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-
-/* Scrollbar Customization */
-#chat-flow::-webkit-scrollbar { width: 5px; }
-#chat-flow::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
+queryInput.onkeypress = (e) => { if (e.key === 'Enter') sendTrigger.click(); };
+window.onload = () => { setTheme(localStorage.getItem('yz_theme_pref') || 'standard'); renderHistory(); };
