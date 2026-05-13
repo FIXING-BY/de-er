@@ -1,178 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
 :root {
-    --accent: rgb(96, 255, 127);
-    --accent-glow: rgba(96, 255, 127, 0.4);
-    --bg-dark: #050608;
-    --sidebar-bg: #0d1117;
-    --msg-bot: #161b22;
-    --msg-user: #21262d;
-    --text-main: #f0f6fc;
-    --text-dim: #8b949e;
-    --glass: rgba(255, 255, 255, 0.02);
-    --glass-heavy: rgba(255, 255, 255, 0.05);
-    --border: rgba(255, 255, 255, 0.08);
-    --border-bright: rgba(255, 255, 255, 0.15);
-    --radius-lg: 24px;
-    --radius-md: 16px;
+    --accent: rgb(96,255,127);
+    --bg: #05070a;
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --text: #ffffff;
+    --text-mute: rgba(255, 255, 255, 0.5);
+    --msg-user: #1a1d23;
 }
 
 body.theme-grey {
-    --accent: #2d333b;
-    --bg-dark: #f6f8fa;
-    --sidebar-bg: #ffffff;
-    --msg-bot: #ffffff;
-    --msg-user: #f0f2f5;
-    --text-main: #1f2328;
-    --text-dim: #656d76;
-    --glass: rgba(0, 0, 0, 0.03);
-    --border: rgba(0, 0, 0, 0.08);
+    --bg: #f5f7fa;
+    --glass-bg: rgba(0, 0, 0, 0.03);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --text: #1a1a1a;
+    --text-mute: #666;
+    --accent: #2d3436;
 }
 
 body.theme-soft-dark {
-    --accent: rgb(96, 255, 127);
-    --bg-dark: #000000;
-    --sidebar-bg: #080808;
-    --msg-bot: #111111;
-    --msg-user: #1c1c1c;
-    --text-main: #ffffff;
-    --text-dim: #888888;
+    --bg: #000;
+    --glass-bg: rgba(255, 255, 255, 0.02);
+    --accent: rgb(96,255,127);
 }
 
-* { 
-    box-sizing: border-box; 
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-    margin: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-    background-color: var(--bg-dark); color: var(--text-main);
-    display: flex; height: 100vh; overflow: hidden;
-    letter-spacing: -0.01em;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
 }
 
-/* --- Yan Menü (Sidebar) --- */
+.glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(25px) saturate(180%);
+    border: 1px solid var(--glass-border);
+}
+
+/* Yan Menü Apple Tarzı */
 #sidebar {
-    position: fixed; left: -320px; top: 0; width: 300px; height: 100%;
-    background: var(--sidebar-bg); 
-    border-right: 1px solid var(--border);
-    z-index: 1000; padding: 32px 24px; 
-    display: flex; flex-direction: column;
+    position: fixed; left: -320px; top: 15px; bottom: 15px; width: 300px;
+    border-radius: 24px; z-index: 1000; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 30px; display: flex; flex-direction: column;
 }
-#sidebar.active { left: 0; box-shadow: 40px 0 100px rgba(0,0,0,0.8); }
+#sidebar.active { left: 15px; box-shadow: 0 40px 100px rgba(0,0,0,0.8); }
 
-/* --- Modern Butonlar (Theme Buttons) --- */
-.theme-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-
-.t-btn { 
-    padding: 14px 18px; 
-    border-radius: var(--radius-md); 
-    border: 1px solid var(--border); 
-    background: var(--glass); 
-    color: var(--text-dim); 
-    cursor: pointer; 
-    font-weight: 500;
-    text-align: left;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+#sidebar-blur {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+    z-index: 999; backdrop-filter: blur(5px);
 }
+#sidebar-blur.active { display: block; }
 
-.t-btn:hover { 
-    background: var(--glass-heavy);
-    border-color: var(--border-bright);
-    color: var(--text-main);
-    transform: translateX(4px);
+.sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+.brand-name { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; color: var(--accent); }
+#close-menu { background: none; border: none; color: var(--text); font-size: 1.2rem; cursor: pointer; }
+
+.menu-item label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-mute); margin-bottom: 12px; display: block; }
+.theme-btns { display: grid; gap: 8px; margin-bottom: 30px; }
+.t-btn { padding: 12px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.02); color: var(--text); cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+.t-btn:hover { background: var(--accent); color: #000; }
+
+/* Main Area */
+.main-screen { flex: 1; display: flex; flex-direction: column; position: relative; width: 100%; }
+
+.banner {
+    margin: 15px; height: 70px; border-radius: 20px; display: flex; align-items: center; 
+    justify-content: space-between; padding: 0 25px; z-index: 10;
 }
 
-.t-btn.standard { 
-    border: 1px solid var(--accent);
-    background: rgba(96, 255, 127, 0.05);
-    color: var(--text-main);
-}
+.banner-left { display: flex; align-items: center; gap: 20px; }
+.menu-icon { background: none; border: none; cursor: pointer; display: flex; flex-direction: column; gap: 6px; }
+.menu-icon span { width: 24px; height: 2px; background: var(--text); border-radius: 10px; }
 
-/* --- Chat Alanı --- */
-.top-banner {
-    height: 80px; 
-    padding: 0 40px; 
-    background: rgba(5, 6, 8, 0.7);
-    backdrop-filter: blur(20px) saturate(180%);
-    border-bottom: 1px solid var(--border);
-}
+.app-logo { width: 34px; height: 34px; color: var(--accent); }
+.brand-title { font-size: 1.2rem; font-weight: 800; }
 
-.msg { 
-    max-width: 80%; 
-    padding: 20px 28px; 
-    border-radius: var(--radius-lg); 
-    font-size: 0.95rem; 
-    font-weight: 400;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-}
+.ai-status { font-size: 0.75rem; color: var(--accent); background: rgba(96,255,127,0.1); padding: 6px 16px; border-radius: 100px; font-weight: 600; }
 
-.bot { 
-    align-self: flex-start; 
-    background: var(--msg-bot); 
-    border: 1px solid var(--border);
-    border-bottom-left-radius: 8px; 
-}
+/* Chat Flow */
+#chat-flow { flex: 1; overflow-y: auto; padding: 40px 20px; display: flex; flex-direction: column; gap: 25px; }
+.intro-box { max-width: 600px; margin: 100px auto; text-align: center; }
+.intro-box h2 { font-size: 3rem; margin-bottom: 15px; font-weight: 800; letter-spacing: -2px; }
+.intro-box p { color: var(--text-mute); font-size: 1.1rem; line-height: 1.6; }
 
-.user { 
-    align-self: flex-end; 
-    background: var(--msg-user); 
-    border: 1px solid var(--border-bright);
-    border-bottom-right-radius: 8px; 
-}
+.message { max-width: 800px; width: fit-content; padding: 20px 26px; border-radius: 28px; line-height: 1.6; font-size: 1.05rem; animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.msg-bot { align-self: flex-start; background: var(--glass-bg); border: 1px solid var(--glass-border); border-bottom-left-radius: 4px; }
+.msg-user { align-self: flex-end; background: var(--msg-user); border-bottom-right-radius: 4px; }
 
-/* --- Modern Input Alanı --- */
-.input-wrapper { 
-    padding: 20px 40px 40px; 
-    max-width: 1000px;
-}
+.sources { margin-top: 15px; font-size: 0.8rem; color: var(--accent); padding-top: 12px; border-top: 1px solid var(--glass-border); font-weight: 500; }
 
-.input-container {
-    background: var(--msg-bot);
-    border: 1px solid var(--border);
-    border-radius: 22px;
-    padding: 8px 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-}
+/* Yüzen Input Pill */
+.input-float-wrap { padding: 40px 20px; width: 100%; max-width: 850px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
+.input-pill { width: 100%; display: flex; align-items: center; padding: 8px 12px; border-radius: 24px; transition: 0.3s; }
+.input-pill:focus-within { border-color: var(--accent); box-shadow: 0 0 30px rgba(96,255,127,0.1); }
 
-.input-container:focus-within {
-    border-color: var(--accent);
-    box-shadow: 0 0 20px var(--accent-glow);
-}
+#query-input { flex: 1; background: none; border: none; outline: none; color: var(--text); padding: 12px 15px; font-size: 1.1rem; }
+#send-trigger { background: var(--accent); border: none; width: 48px; height: 48px; border-radius: 18px; color: #000; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+#send-trigger:hover { transform: scale(1.05) rotate(-10deg); }
+#send-trigger svg { width: 22px; height: 22px; }
 
-#user-input {
-    padding: 12px 16px;
-    font-size: 1rem;
-    font-weight: 400;
-}
+.helper-text { font-size: 0.75rem; color: var(--text-mute); margin-top: 15px; }
 
-/* --- Gönder Butonu (Premium Look) --- */
-#send-btn {
-    background: var(--accent);
-    color: #000;
-    width: 48px;
-    height: 48px;
-    border-radius: 16px;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 4px 15px var(--accent-glow);
-}
+@keyframes pop { from { opacity: 0; transform: scale(0.9) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
-#send-btn:hover {
-    transform: scale(1.05) rotate(-5deg);
-    filter: brightness(1.1);
-}
-
-#send-btn:active {
-    transform: scale(0.95);
-}
-
-/* --- Kaydırma Çubuğu --- */
-#chat-container::-webkit-scrollbar { width: 5px; }
-#chat-container::-webkit-scrollbar-track { background: transparent; }
-#chat-container::-webkit-scrollbar-thumb { 
-    background: var(--border-bright); 
-    border-radius: 20px; 
-}
+/* Scrollbar Customization */
+#chat-flow::-webkit-scrollbar { width: 5px; }
+#chat-flow::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
