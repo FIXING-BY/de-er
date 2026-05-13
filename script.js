@@ -15,7 +15,7 @@ sidebarBlur.onclick = () => { sidebar.classList.remove('active'); sidebarBlur.cl
 
 function setTheme(t) {
     document.body.className = 'theme-' + t;
-    localStorage.setItem('yz_theme_pref', t);
+    localStorage.setItem('yz_theme_v3', t);
 }
 
 function appendMessage(text, isBot = true, sources = []) {
@@ -26,21 +26,21 @@ function appendMessage(text, isBot = true, sources = []) {
     d.className = `message ${isBot ? 'msg-bot' : 'msg-user'}`;
     let html = `<div>${text}</div>`;
     if (sources.length > 0) {
-        html += `<div class="sources">Sentezlenen Dosyalar: ${sources.join(', ')}</div>`;
+        html += `<div class="sources">KAYNAK DOSYALAR: ${sources.join(', ')}</div>`;
     }
     d.innerHTML = html;
     chatFlow.appendChild(d);
     chatFlow.scrollTop = chatFlow.scrollHeight;
 }
 
-// GROQ API Entegrasyonu
+// GROQ API Entegrasyonu (Llama 3.1)
 async function callAnalyst(question, dataSet) {
     const systemInstruction = `
     Senin adın Değer YZ. Yapımcıların: Ozan Nigar ve Hasan Eymen Kartal.
     KESİN KURALLAR:
     1. Sadece sana verilen "METİNLER" üzerinden cevap ver. Kendi bilgilerini asla kullanma.
     2. Metinlerde cevap yoksa tam olarak şunu söyle: "Bu bilgiye kütüphanemdeki değerlendirmelerden ulaşamadım, kitap veya film hakkında başka bir şey sorabilirsin."
-    3. Sadece kitap/film analizi yap.
+    3. Sadece kitap/film analizi yap. Metinlerde ne geçiyorsa onu aktar.
     METİNLER:
     ${dataSet.map(d => `[Yazar: ${d.author}]: ${d.content}`).join("\n\n")}
     `;
@@ -57,14 +57,13 @@ async function callAnalyst(question, dataSet) {
         });
         const d = await r.json();
         return d.choices[0].message.content;
-    } catch (e) { return "Bağlantı hatası: Analiz yapılamadı."; }
+    } catch (e) { return "HATA: Analiz motoru bağlantısı koptu."; }
 }
 
 async function processSearch(q) {
     const lowQ = q.toLocaleLowerCase('tr-TR');
     
-    // Kimlik sorguları
-    if (lowQ.includes("kimsin") || lowQ.includes("adın ne")) return appendMessage("Ben <b>Değer YZ</b>. Ozan Nigar ve Hasan Eymen Kartal'ın sistemindeki verileri analiz ederim.");
+    if (lowQ.includes("kimsin") || lowQ.includes("adın ne")) return appendMessage("Ben <b>Değer YZ</b>. Ozan Nigar ve Hasan Eymen Kartal'ın özel kütüphane analiz asistanıyım.");
     if (lowQ.includes("kim yaptı") || lowQ.includes("sahibin")) return appendMessage("Ben <b>Ozan Nigar</b> ve <b>Hasan Eymen Kartal</b> tarafından kodlandım.");
 
     try {
@@ -72,9 +71,8 @@ async function processSearch(q) {
         const data = await res.json();
         
         const book = data.kütüphane.find(k => lowQ.includes(k.ad.toLocaleLowerCase('tr-TR')));
-        if (!book) return appendMessage("Bu eser kütüphanemde kayıtlı değil veya henüz incelenmemiş.");
+        if (!book) return appendMessage("Bu eser kütüphanemde kayıtlı değil veya henüz dosyası eklenmemiş.");
 
-        // Yazarları sırala (ö) öncelikli
         let sortedList = [
             ...book.yazarlar.filter(a => a.toLocaleLowerCase('tr-TR').includes("(ö)")),
             ...book.yazarlar.filter(a => !a.toLocaleLowerCase('tr-TR').includes("(ö)"))
@@ -98,29 +96,29 @@ async function processSearch(q) {
         }
 
         if (authNames.length > 0) {
-            appendMessage("<i>Analiz ediliyor...</i>");
+            appendMessage("<i>Analiz motoru dosyaları tarıyor...</i>");
             const result = await callAnalyst(q, docs);
             appendMessage(result, true, authNames);
             saveToHistory(q);
         } else {
-            appendMessage("Eser klasöründe hiç değerlendirme dosyası (.txt) bulunamadı.");
+            appendMessage("Üzgünüm okunacak bir değerlendirme bulamadım.");
         }
-    } catch (e) { appendMessage("Sistem hatası: index.json okunamadı."); }
+    } catch (e) { appendMessage("KRİTİK HATA: index.json dosyasına erişilemiyor."); }
 }
 
 function saveToHistory(q) {
-    let hist = JSON.parse(localStorage.getItem('yz_history')) || [];
+    let hist = JSON.parse(localStorage.getItem('yz_history_v3')) || [];
     if (!hist.includes(q)) {
         hist.unshift(q);
-        if (hist.length > 10) hist.pop();
-        localStorage.setItem('yz_history', JSON.stringify(hist));
+        if (hist.length > 12) hist.pop();
+        localStorage.setItem('yz_history_v3', JSON.stringify(hist));
         renderHistory();
     }
 }
 
 function renderHistory() {
-    let hist = JSON.parse(localStorage.getItem('yz_history')) || [];
-    historyBox.innerHTML = hist.map(i => `<div class="hist-item" onclick="useHist('${i}')">${i.substring(0, 25)}...</div>`).join('');
+    let hist = JSON.parse(localStorage.getItem('yz_history_v3')) || [];
+    historyBox.innerHTML = hist.map(i => `<div class="hist-item" onclick="useHist('${i}')">${i.substring(0, 28)}...</div>`).join('');
 }
 
 function useHist(i) {
@@ -129,10 +127,15 @@ function useHist(i) {
     sidebarBlur.classList.remove('active');
 }
 
+document.getElementById('clear-history').onclick = () => {
+    localStorage.removeItem('yz_history_v3');
+    renderHistory();
+};
+
 sendTrigger.onclick = () => {
     const val = queryInput.value.trim();
     if (val) { appendMessage(val, false); processSearch(val); queryInput.value = ''; }
 };
 
 queryInput.onkeypress = (e) => { if (e.key === 'Enter') sendTrigger.click(); };
-window.onload = () => { setTheme(localStorage.getItem('yz_theme_pref') || 'standard'); renderHistory(); };
+window.onload = () => { setTheme(localStorage.getItem('yz_theme_v3') || 'standard'); renderHistory(); };
